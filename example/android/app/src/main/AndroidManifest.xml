@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="tfliteaudio.tflite_audio_example">
+    package="tfliteaudio.tflite_sound_classification_example">
     <!-- io.flutter.app.FlutterApplication is an android.app.Application that
          calls FlutterMain.startInitialization(this); in its onCreate method.
          In most cases you can leave this as-is, but you if you want to provide
@@ -10,7 +10,7 @@
     
     <application
         android:name="io.flutter.app.FlutterApplication"
-        android:label="tflite_audio_example"
+        android:label="tflite_sound_classification_example"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

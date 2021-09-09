@@ -36,8 +36,8 @@ android {
     }
 
     defaultConfig {
-        applicationId "tfliteaudio.tflite_audio_example"
-        minSdkVersion 19
+        applicationId "tfliteaudio.tflite_sound_classification_example"
+        minSdkVersion 23
         targetSdkVersion 28
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName

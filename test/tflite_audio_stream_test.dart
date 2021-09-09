@@ -8,7 +8,7 @@ https://github.com/ZaraclaJ/audio_recorder/blob/master/test/audio_recorder_test.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tflite_audio/tflite_audio.dart';
+import 'package:tflite_sound_classification/tflite_sound_classification.dart';
 import 'package:flutter/services.dart';
 
 const MethodChannel eventChannel = MethodChannel('startAudioRecognition');

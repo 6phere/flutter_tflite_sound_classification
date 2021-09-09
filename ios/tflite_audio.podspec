@@ -1,9 +1,9 @@
 #
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html.
-# Run `pod lib lint tflite_audio.podspec' to validate before publishing.
+# Run `pod lib lint tflite_sound_classification.podspec' to validate before publishing.
 #
 Pod::Spec.new do |s|
-  s.name             = 'tflite_audio'
+  s.name             = 'tflite_sound_classification'
   s.version          = '0.1.8+1'
   s.summary          = 'A new flutter plugin project.'
   s.description      = <<-DESC

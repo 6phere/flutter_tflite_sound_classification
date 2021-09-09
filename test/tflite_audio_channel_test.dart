@@ -5,11 +5,11 @@ https://github.com/flutter/plugins/blob/f93314bb3779ebb0151bc326a0e515ca5f46533c
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tflite_audio/tflite_audio.dart';
+import 'package:tflite_sound_classification/tflite_sound_classification.dart';
 import 'package:flutter/services.dart';
 
 final List<MethodCall> log = <MethodCall>[];
-const MethodChannel channel = MethodChannel('tflite_audio');
+const MethodChannel channel = MethodChannel('tflite_sound_classification');
 // const MethodChannel eventChannel = MethodChannel('startAudioRecognition');
 
 void main() {
@@ -29,16 +29,10 @@ void main() {
     });
 
     test('passes optional and required arguments correctly', () async {
-      await TfliteAudio.loadModel(
-        model: 'assets/decoded_wav_model.tflite',
-        label: 'assets/decoded_wav_label.txt',
-      );
 
       await TfliteAudio.loadModel(
         model: 'assets/google_teach_machine_model.tflite',
-        label: 'assets/google_teach_machine_label.txt',
-        numThreads: 3,
-        isAsset: false,
+        label: 'assets/google_teach_machine_model.txt',
       );
 
       expect(
@@ -47,19 +41,10 @@ void main() {
           isMethodCall(
             'loadModel',
             arguments: <dynamic, dynamic>{
-              'model': 'assets/decoded_wav_model.tflite',
-              'label': 'assets/decoded_wav_label.txt',
+              'model': 'assets/google_teach_machine_model.tflite',
+              'label': 'assets/google_teach_machine_model.txt',
               'numThreads': 1,
               'isAsset': true,
-            },
-          ),
-          isMethodCall(
-            'loadModel',
-            arguments: <dynamic, dynamic>{
-              'model': 'assets/google_teach_machine_model.tflite',
-              'label': 'assets/google_teach_machine_label.txt',
-              'numThreads': 3,
-              'isAsset': false,
             },
           ),
         ],

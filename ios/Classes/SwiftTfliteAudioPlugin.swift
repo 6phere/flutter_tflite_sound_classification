@@ -46,7 +46,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         let instance = SwiftTfliteAudioPlugin(registrar: registrar)
         
         // MethodChannel
-        let channel = FlutterMethodChannel(name: "tflite_audio", binaryMessenger: registrar.messenger())
+        let channel = FlutterMethodChannel(name: "tflite_sound_classification", binaryMessenger: registrar.messenger())
         registrar.addMethodCallDelegate(instance, channel: channel)
         
         // EventChannel

@@ -1,23 +1,21 @@
-# TFlite Audio Plugin for Flutter
+# TFlite Sound Classification Plugin for Flutter
 
-[![pub package](https://img.shields.io/pub/v/tflite_audio.svg?label=version&color=blue)](https://pub.dev/packages/tflite_audio)
-[![likes](https://badges.bar/tflite_audio/likes)](https://pub.dev/packages/tflite_audio/score)
+[![pub package](https://img.shields.io/pub/v/tflite_sound_classification.svg?label=version&color=blue)](https://pub.dev/packages/tflite_sound_classification)
+[![likes](https://badges.bar/tflite_sound_classification/likes)](https://pub.dev/packages/tflite_sound_classification/score)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![style: effective dart](https://img.shields.io/badge/style-effective_dart-40c4ff.svg)](https://pub.dev/packages/effective_dart)
 
 <br>
 
-Audio classification Tflite package for flutter (iOS & Android). Can support Google Teachable Machine models. 
+Audio classification Tflite package for flutter (iOS & Android).
 
-If you are a complete newbie to audio classification, you can read the tutorial [here](https://carolinamalbuquerque.medium.com/audio-recognition-using-tensorflow-lite-in-flutter-application-8a4ad39964ae). Credit to [Carolina](https://github.com/cmalbuquerque) for writing a comprehensive article.
-
-To keep this project alive, consider giving a star or a like. Contributors are also welcome.
+This project is a fork from [https://github.com/Caldarie/flutter_tflite_audio](https://github.com/Caldarie/flutter_tflite_audio) using [https://github.com/tensorflow/examples/tree/master/lite/examples/sound_classification](https://github.com/tensorflow/examples/tree/master/lite/examples/sound_classification/android)
 
 <br>
 
 Recording            |  Inference result
 :-------------------------:|:-------------------------:
-![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/finish.png) | ![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/start.png) 
+![](https://github.com/Caldarie/flutter_tflite_sound_classification/blob/master/pictures/finish.png) | ![](https://github.com/Caldarie/flutter_tflite_sound_classification/blob/master/pictures/start.png)
 
 <br>
 
@@ -92,9 +90,9 @@ Likewise, if your bufferSize is too low, the recording length will be too long a
 
 Please make sure that you have enabled ops-select on your [podfile - step 4 & Xcode - step 5](#ios-if-you-are-using-googles-teachable-machine-model-otherwise-skip) and [build gradle - step 3](#android-if-you-are-using-googles-teachable-machine-otherwise-skip)
 
-If you tried above, please run the example on a device (not emulator). If you still recieved this error, its very likely that theres an issue with cocoapod or Xcode configuration. Please check the [issue #7](https://github.com/Caldarie/flutter_tflite_audio/issues/7)
+If you tried above, please run the example on a device (not emulator). If you still recieved this error, its very likely that theres an issue with cocoapod or Xcode configuration. Please check the [issue #7](https://github.com/Caldarie/flutter_tflite_sound_classification/issues/7)
 
-If you recieved this error from your custom model (not GTM), its likely that you're using unsupported tensorflow operators for tflite, as found in [issue #5](https://github.com/Caldarie/flutter_tflite_audio/issues/5#issuecomment-789260402). For more details on which operators are supported, look at the official documentation [here](https://www.tensorflow.org/lite/guide/ops_compatibility)
+If you recieved this error from your custom model (not GTM), its likely that you're using unsupported tensorflow operators for tflite, as found in [issue #5](https://github.com/Caldarie/flutter_tflite_sound_classification/issues/5#issuecomment-789260402). For more details on which operators are supported, look at the official documentation [here](https://www.tensorflow.org/lite/guide/ops_compatibility)
 
 ### **d) (iOS) App crashes when running Google's Teachable Machine model** 
 
@@ -132,21 +130,21 @@ Please make that your recording length matches your model input size. For exampl
 
 ```
   assets:
-    - assets/decoded_wav_model.tflite
-    - assets/decoded_wav_label.txt
+    - assets/google_teach_machine_model.tflite
+    - assets/google_teach_machine_model.txt
 
 ```
 
 <br>
 
 ## How to use this plugin
-Please look at the [example](https://github.com/Caldarie/flutter_tflite_audio/tree/master/example) on how to implement these futures.
+Please look at the [example](https://github.com/Caldarie/flutter_tflite_sound_classification/tree/master/example) on how to implement these futures.
 
 
 1. Import the plugin. For example:
 
 ```
-import 'package:tflite_audio/tflite_audio.dart';
+import 'package:tflite_sound_classification/tflite_sound_classification.dart';
 ```
 
 
@@ -330,7 +328,7 @@ end
 
     f. Add: `-force_load $(SRCROOT)/Pods/TensorFlowLiteSelectTfOps/Frameworks/TensorFlowLiteSelectTfOps.framework/TensorFlowLiteSelectTfOps`
 
-![](https://github.com/Caldarie/flutter_tflite_audio/blob/master/pictures/tflite-select-ops-installation.png)
+![](https://github.com/Caldarie/flutter_tflite_sound_classification/blob/master/pictures/tflite-select-ops-installation.png)
 
 
 6. Install the ops-select package to pod. To do this:

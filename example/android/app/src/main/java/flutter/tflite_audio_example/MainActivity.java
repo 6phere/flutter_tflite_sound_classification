@@ -1,4 +1,4 @@
-package tfliteaudio.tflite_audio_example;
+package tfliteaudio.tflite_sound_classification_example;
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity;

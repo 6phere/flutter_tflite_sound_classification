@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:developer';
-import 'package:tflite_audio/tflite_audio.dart';
+import 'package:tflite_sound_classification/tflite_sound_classification.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 
@@ -19,58 +19,24 @@ class _MyAppState extends State<MyApp> {
   final isRecording = ValueNotifier<bool>(false);
   Stream<Map<dynamic, dynamic>>? result;
 
-  // //!example values for decodedwav models
-  final String model = 'assets/decoded_wav_model.tflite';
-  final String label = 'assets/decoded_wav_label.txt';
-  final String inputType = 'decodedWav';
-  final int sampleRate = 16000;
-  final int recordingLength = 16000;
-  final int bufferSize = 2000;
-
-  //!example values for google's teachable machine model
-  // final String model = 'assets/google_teach_machine_model.tflite';
-  // final String label = 'assets/google_teach_machine_label.txt';
-  // final String inputType = 'rawAudio';
-  // final int sampleRate = 44100;
-  // final int recordingLength = 44032;
-  // final int bufferSize = 22050;
-
-  //!Optional parameters you can adjust to modify your interence.
-  // final int numThreads = 1;
-  // final int numOfInferences = 1;
-  // final bool isAsset = true;
-
-  //!Adjust the values below when tuning model detection.
-  // final double detectionThreshold = 0.3;
-  // final int averageWindowDuration = 1000;
-  // final int minimumTimeBetweenSamples = 30;
-  // final int suppressionTime = 1500;
+  final String model = 'assets/google_teach_machine_model.tflite';
+  final String label = 'assets/google_teach_machine_model.txt';
+  final String classificationInterval = "500"; // ms;
 
   @override
   void initState() {
     super.initState();
-    TfliteAudio.loadModel(
-      // numThreads: this.numThreads,
-      // isAsset: this.isAsset,
+    TfliteSoundClassification.loadModel(
       model: this.model,
       label: this.label,
+      classificationInterval: this.classificationInterval,
     );
   }
 
   /// get result by calling the stream startAudioRecognition
   /// Uncomment the parameters below if you wish to adjust the values
   void getResult() {
-    result = TfliteAudio.startAudioRecognition(
-      inputType: this.inputType,
-      sampleRate: this.sampleRate,
-      recordingLength: this.recordingLength,
-      bufferSize: this.bufferSize,
-      // numOfInferences: this.numOfInferences,
-      // detectionThreshold: this.detectionThreshold,
-      // averageWindowDuration: this.averageWindowDuration,
-      // minimumTimeBetweenSamples: this.minimumTimeBetweenSamples,
-      // suppressionTime: this.suppressionTime,
-    );
+    result = TfliteSoundClassification.startAudioRecognition();
 
     ///Logs the results and assigns false when stream is finished.
     result
@@ -90,8 +56,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   ///handles null exception if snapshot is null.
-  String showResult(AsyncSnapshot snapshot, String key) =>
-      snapshot.hasData ? snapshot.data[key].toString() : 'null ';
+  Object showResult(AsyncSnapshot snapshot, String key) =>
+      snapshot.hasData ? snapshot.data[key].toList() : null;
 
   @override
   Widget build(BuildContext context) {
@@ -134,9 +100,7 @@ class _MyAppState extends State<MyApp> {
                             return Stack(children: <Widget>[
                               Align(
                                   alignment: Alignment.bottomRight,
-                                  child: inferenceTimeWidget(showResult(
-                                          inferenceSnapshot, 'inferenceTime') +
-                                      'ms')),
+                                  child: inferenceTimeWidget('Stopped')),
                               labelListWidget(
                                   labelSnapshot.data,
                                   showResult(
@@ -167,7 +131,7 @@ class _MyAppState extends State<MyApp> {
                           onPressed: () {
                             log('Audio Recognition Stopped');
                             //Press button again to cancel audio recognition
-                            TfliteAudio.stopAudioRecognition();
+                            TfliteSoundClassification.stopAudioRecognition();
                           },
                           backgroundColor: Colors.red,
                           child: const Icon(Icons.adjust),
@@ -177,26 +141,26 @@ class _MyAppState extends State<MyApp> {
   }
 
   ///  If snapshot data matches the label, it will change colour
-  Widget labelListWidget(List<String>? labelList, [String? result]) {
+  Widget labelListWidget(List<String>? labelList, [dynamic result]) {
     return Center(
         child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
-            children: labelList!.map((labels) {
-              if (labels == result) {
+            children: labelList!.map((label) {
+              if (result!=null && result.where((recognizedItem) => recognizedItem["label"]==label).toList().length>0) {
+                var item =  result.firstWhere((recognizedItem) => recognizedItem["label"]==label);
                 return Padding(
                     padding: const EdgeInsets.all(5.0),
-                    child: Text(labels.toString(),
+                    child: Text('${item["label"]} - ${item["score"]}',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 25,
                           color: Colors.green,
                         )));
               } else {
                 return Padding(
                     padding: const EdgeInsets.all(5.0),
-                    child: Text(labels.toString(),
+                    child: Text(label.toString(),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
