@@ -357,7 +357,6 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
 
         record.stop();
         record.release();
-        audioClassifier = null;
 
         recordingThread = null;//closes recording
         Log.d(LOG_TAG, "Recording stopped.");
