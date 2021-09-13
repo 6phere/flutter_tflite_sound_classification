@@ -293,6 +293,13 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
         android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_AUDIO);
         record = audioClassifier.createAudioRecord();
 
+        // To change AudioSource to Unprocessed
+        record = new AudioRecord(
+                        MediaRecorder.AudioSource.UNPROCESSED,
+                        record.getSampleRate(),
+                        record.getChannelConfiguration(),
+                        AudioFormat.ENCODING_PCM_FLOAT,
+                        record.getBufferSizeInFrames());
         if (record.getState() != AudioRecord.STATE_INITIALIZED) {
             Log.e(LOG_TAG, "Audio Record can't initialize!");
             return;
