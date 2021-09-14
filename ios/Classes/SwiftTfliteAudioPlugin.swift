@@ -34,8 +34,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     private let maxInt16AsFloat32: Float32 = 32767.0
     
     //label smooth variables
-    private var recognitionResult: LabelSmoothing?
     private var labelArray: [String] = []
+
+    private var sampleRate: Int = 0
 
 
     init(registrar: FlutterPluginRegistrar) {
@@ -156,19 +157,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     func startMicrophone(){
         print("start microphone")
         
-        let bufferSize = arguments["bufferSize"] as! Int
-        let sampleRate = arguments["sampleRate"] as! Int
-        let recordingLength = arguments["recordingLength"] as! Int
-        let numOfInferences = arguments["numOfInferences"] as! Int
-        
-        let maxRecordingLength = recordingLength * numOfInferences
-        let recordingFrameBuffer = bufferSize/2 
-        
-        //recording frames are appended and stored in this array
-        var recordingBuffer: [Int16] = [] 
-        var preRecordingCount: Int = 0
-        var recordingCount: Int = recordingLength
-        
+        let bufferSize = sampleRate * 2
+
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
         let recordingFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: Double(sampleRate), channels: 1, interleaved: true)
@@ -181,8 +171,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             
             self.conversionQueue.async {
                 
-                //let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat!, frameCapacity: AVAudioFrameCount(recordingFormat!.sampleRate * 2.0))
-                let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat!, frameCapacity: AVAudioFrameCount(recordingFrameBuffer))
+                let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat!, frameCapacity: AVAudioFrameCount(recordingFormat!.sampleRate*2.0))
                 var error: NSError? = nil
                 
                 let inputBlock: AVAudioConverterInputBlock = {inNumPackets, outStatus in
@@ -202,25 +191,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                                                        to: Int(pcmBuffer!.frameLength),
                                                        by: buffer.stride).map{ channelDataValue[$0] }
                     
-                    recordingBuffer.append(contentsOf: channelDataValueArray)
-                    print("recordingBuffer length: \(recordingBuffer.count)")
-                    
-                    
-                    if(recordingBuffer.count >= recordingCount){
-                        print("reached threshold")
 
-                        self.recognize(onBuffer: Array(recordingBuffer[preRecordingCount..<recordingCount]))
-             
-                        if(recordingBuffer.count >= maxRecordingLength){
-                            self.stopAudioRecognition()
-                        }else{
-                            print("Looping...")
-                            recordingCount += recordingLength
-                            preRecordingCount += recordingLength
-                            print(recordingCount)
-                            print(preRecordingCount)
-                        }
-                    }
+                    self.recognize(onBuffer: channelDataValueArray)
                     
                 } //channeldata
             } //conversion queue
@@ -248,25 +220,12 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
        
         var interval: TimeInterval!
         var outputTensor: Tensor!
-        let inputType = arguments["inputType"] as! String
-        
+
         do {
             // Copy the `[Int16]` buffer data as an array of `Float`s to the audio buffer input `Tensor`'s.
-            let audioBufferData = Data(copyingBufferOf: buffer.map { Float($0) / maxInt16AsFloat32 })
+            let audioBufferData = int16ArrayToData(buffer)
             try interpreter.copy(audioBufferData, toInputAt: 0)
 
-            if(inputType != "decodedWav" && inputType != "rawAudio"){
-                assertionFailure("Input type does not match decodedWav or rawAudio")
-            }
-
-            if(inputType == "decodedWav"){
-                    let sampleRate = arguments["sampleRate"] as! Int
-
-                     // Copy the sample rate data to the sample rate input `Tensor`.
-                    var rate = Int32(sampleRate)
-                    let sampleRateData = Data(bytes: &rate, count: MemoryLayout.size(ofValue: rate))
-                    try interpreter.copy(sampleRateData, toInputAt: 1)
-            }
 
             // Calculate inference time
             let startDate = Date()
@@ -279,14 +238,6 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         } catch let error {
             print("Failed to invoke the interpreter with error: \(error.localizedDescription)")
         }
-    
-        recognitionResult = LabelSmoothing(
-            averageWindowDuration: arguments["averageWindowDuration"] as! Double,
-            detectionThreshold: Float(arguments["detectionThreshold"] as! NSNumber),
-            minimumTimeBetweenSamples: arguments["minimumTimeBetweenSamples"] as! Double,
-            suppressionTime: arguments["suppressionTime"] as! Double,
-            classLabels: labelArray
-        )
 
         // Gets the formatted and averaged results.
         let scores = [Float32](unsafeData: outputTensor.data) ?? []
@@ -311,10 +262,10 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     private func getResults(withScores scores: [Float]) -> String? {
                 
         // Runs results through recognize commands.
-        let command = recognitionResult?.process(
+        /*let command = recognitionResult?.process(
             latestResults: scores,
             currentTime: Date().timeIntervalSince1970 * 1000
-        )
+        )*/
         
         //Check if command is new and the identified result is not silence or unknown.
         // guard let newCommand = command,
@@ -324,34 +275,41 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         // else {
         //     return nil
         // }
-        return command?.name
+        
+
+        
+        let results = scores.enumerated().map{(index,score) in return [
+        
+            "score":String(format: "%f",score),
+            "label":labelArray[index]
+        ]}
+        
+        let jsonEncoder = JSONEncoder()
+        do{
+            let jsonData = try jsonEncoder.encode(results)
+
+            return String(data:jsonData,encoding: String.Encoding.utf8);
+            
+        }catch {
+            print("Failed to decode score results")
+        }
+        return nil
+       
     }
     
     func loadModel(registrar: FlutterPluginRegistrar){
         
-        let isAsset = arguments["isAsset"] as! Bool
-        
+
         var modelPath: String
         var modelKey: String
         let model = arguments["model"] as! String
-        
-        
-        //Get model path
-        if(isAsset){
-            modelKey = registrar.lookupKey(forAsset: model)
-            modelPath = Bundle.main.path(forResource: modelKey, ofType: nil)!
-        } else {
-            modelPath = model
-        }
-        
-        // Specify the options for the `Interpreter`.
-        let threadCount = arguments["numThreads"] as! Int
-        var options = Interpreter.Options()
-        options.threadCount = threadCount
-        
+
+        modelKey = registrar.lookupKey(forAsset: model)
+        modelPath = Bundle.main.path(forResource: modelKey, ofType: nil)!
+
         do {
             // Create the `Interpreter`.
-            interpreter = try Interpreter(modelPath: modelPath, options: options)
+            interpreter = try Interpreter(modelPath: modelPath)
             // Allocate memory for the model's input `Tensor`s.
             try interpreter.allocateTensors()
         } catch let error {
@@ -363,14 +321,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         let label = arguments["label"] as! String
         
         if(label.count > 0){
-            if(isAsset){
-                let labelKey = registrar.lookupKey(forAsset: label)
-                let labelPath = Bundle.main.url(forResource: labelKey, withExtension: nil)!
-                loadLabels(labelPath: labelPath as URL)
-            } else {
-                let labelPath = URL(string: label)
-                loadLabels(labelPath: labelPath!)
-            }
+            let labelKey = registrar.lookupKey(forAsset: label)
+            let labelPath = Bundle.main.url(forResource: labelKey, withExtension: nil)!
+            loadLabels(labelPath: labelPath as URL)
         }
 
     }
@@ -381,6 +334,12 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
         let contents = try! String(contentsOf: labelPath, encoding: .utf8)
         labelArray = contents.components(separatedBy: CharacterSet.newlines).filter({ $0 != ""})
         print(labelArray)
+    }
+
+    /// Creates a new buffer by copying the buffer pointer of the give Int16 array
+    private func int16ArrayToData(_ buffer: [Int16]) -> Data {
+        let floatData = buffer.map {Float($0) / Float(Int16.max)}
+        return floatData.withUnsafeBufferPointer(Data.init)
     }
     
     
