@@ -7,9 +7,13 @@ import os
 
 
 //  Interpreter result => dictionarty
+struct ScoreResult: Codable{
+    let score: Float
+    let label: String
+}
 struct Result: Codable {
     // let recognitionResult: RecognitionResult?
-    let recognitionResult: String!
+    let recognitionResult: [ScoreResult]!
     let inferenceTime: Double
     let hasPermission: Bool
 }
@@ -32,6 +36,7 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     //Microphone variables
     private let conversionQueue = DispatchQueue(label: "conversionQueue")
     private let maxInt16AsFloat32: Float32 = 32767.0
+    private let MINIMUM_DISPLAY_THRESHOLD: Float = 0.3
     
     //label smooth variables
     private var labelArray: [String] = []
@@ -192,8 +197,8 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
                                                        by: buffer.stride).map{ channelDataValue[$0] }
                     
 
-                    self.recognize(onBuffer: channelDataValueArray)
-                    
+                    self.recognize(onBuffer: Array(channelDataValueArray[0..<self.sampleRate]))
+                    self.recognize(onBuffer: Array(channelDataValueArray[self.sampleRate..<(self.sampleRate*2)]))
                 } //channeldata
             } //conversion queue
         } //installtap
@@ -259,42 +264,10 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
 
       
     // private func getResults(withScores scores: [Float]) -> RecognitionResult? {
-    private func getResults(withScores scores: [Float]) -> String? {
-                
-        // Runs results through recognize commands.
-        /*let command = recognitionResult?.process(
-            latestResults: scores,
-            currentTime: Date().timeIntervalSince1970 * 1000
-        )*/
+    private func getResults(withScores scores: [Float]) -> [ScoreResult]? {
+        let results = scores.enumerated().map{(index,score) in return ScoreResult(score:score, label: labelArray[index])}.filter{score in score.score>self.MINIMUM_DISPLAY_THRESHOLD}
         
-        //Check if command is new and the identified result is not silence or unknown.
-        // guard let newCommand = command,
-        //   let index = labelArray.firstIndex(of: newCommand.name),
-        //   newCommand.isNew,
-        //   index >= labelOffset
-        // else {
-        //     return nil
-        // }
-        
-
-        
-        let results = scores.enumerated().map{(index,score) in return [
-        
-            "score":String(format: "%f",score),
-            "label":labelArray[index]
-        ]}
-        
-        let jsonEncoder = JSONEncoder()
-        do{
-            let jsonData = try jsonEncoder.encode(results)
-
-            return String(data:jsonData,encoding: String.Encoding.utf8);
-            
-        }catch {
-            print("Failed to decode score results")
-        }
-        return nil
-       
+        return results
     }
     
     func loadModel(registrar: FlutterPluginRegistrar){
@@ -312,6 +285,9 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
             interpreter = try Interpreter(modelPath: modelPath)
             // Allocate memory for the model's input `Tensor`s.
             try interpreter.allocateTensors()
+            let inputShape = try interpreter.input(at: 0).shape
+            sampleRate = inputShape.dimensions[1]
+            
         } catch let error {
             print("Failed to create the interpreter with error: \(error.localizedDescription)")
             //return nil
