@@ -161,6 +161,12 @@ public class SwiftTfliteAudioPlugin: NSObject, FlutterPlugin, FlutterStreamHandl
     
     func startMicrophone(){
         print("start microphone")
+
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, options: AVAudioSession.CategoryOptions(rawValue: UInt(UInt8(AVAudioSession.CategoryOptions.defaultToSpeaker.rawValue))))
+        } catch let error {
+            print("Failed to change Category with error: \(error.localizedDescription)")
+        }
         
         let bufferSize = sampleRate * 2
 
