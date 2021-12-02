@@ -219,7 +219,7 @@ public class TfliteAudioPlugin implements MethodCallHandler, StreamHandler, Plug
     public boolean onRequestPermissionsResult(
             int requestCode, String[] permissions, int[] grantResults) {
         //if request is cancelled, result arrays will be empty
-        if (requestCode == REQUEST_RECORD_AUDIO
+        if (Arrays.stream(permissions).anyMatch("android.permission.RECORD_AUDIO"::equals)
                 && grantResults.length > 0
                 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             startRecording();
